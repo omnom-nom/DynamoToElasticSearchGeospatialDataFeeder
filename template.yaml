@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  DynamoToElasticSearchGeospatialDataFeeder
+
+  Sample SAM Template for DynamoToElasticSearchGeospatialDataFeeder
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 600
+
+Resources:
+
+
+
+  DataFeederFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: data-feeder/
+      Handler: data-feeder
+      Runtime: go1.x
+      Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
+      Policies:
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:*
+              Resource: '*'
+      Events:
+        DynamoDBEvent:
+          Type: DynamoDB # More info about DynamoDB Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#dynamodb
+          Properties:
+            Stream: "arn:aws:dynamodb:us-west-2:868207329640:table/CookInfoTable/stream/2019-06-14T05:26:25.953"
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          ELASTIC_SEARCH_DOMAIN: "https://search-omnom-yl32od7n3hhsmiucanc4ebe35e.us-west-2.es.amazonaws.com"
+
+Outputs:
+  DataFeederFunction:
+    Description: "First Lambda Function ARN"
+    Value: !GetAtt DataFeederFunction.Arn
+
+  DataFeederFunctionIamRole:
+    Description: "Implicit IAM Role created for lambda function"
+    Value: !GetAtt DataFeederFunctionRole.Arn
